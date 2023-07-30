@@ -27,7 +27,7 @@ colCount = 7
 BoardNode = new alphaBeta.Node
 BoardNode.pieces = null	// 2D [row][col] array of ".", "X", or "O"
 BoardNode.player = 0	// 0 for X (minimizer), 1 for O (maximizer)
-BoardNode.winner = 0	// 1 for X, 2 for O
+BoardNode.winner = null	// 0 when X has won, 1 when O has won
 BoardNode.initToStartingState = function
 	self.pieces = list.init2d(rowCount, colCount, ".")
 end function
@@ -51,8 +51,8 @@ BoardNode.makeChild = function(columnToPlay)
 	child.pieces = self.pieces.deepCopy
 	child.pieces[row][columnToPlay] = "XO"[self.player]
 	child.player = not self.player
-	// precompute winner (ToDo: heuristic value only)
-	child.winner = child.winner
+	// precompute heuristic value (and winner), and store on the child
+	// (so if we access it again, we don't redo all those calculations)
 	child.heuristicValue = child.heuristicValue
 	return child
 end function
@@ -80,10 +80,10 @@ BoardNode.scorePiecesInRow = function(xy0, xy1, xy2, xy3)
 	   p[xy2[0]][xy2[1]], p[xy3[0]][xy3[1]] ].sort.join("")
 	if pieces == "...." then return 0
 	if pieces == "XXXX" then 
-		self.winner = 1
+		self.winner = 0
 		return -infinity
 	else if pieces == "OOOO" then
-		self.winner = 2
+		self.winner = 1
 		return infinity
 	end if
 	if pieces == ".XXX" then return -100
@@ -128,7 +128,7 @@ end function
 
 // return whether the game is over
 BoardNode.isGameOver = function
-	return self.winner > 0
+	return self.winner != null
 end function
 
 
@@ -176,9 +176,9 @@ while not curState.isGameOver
 end while
 curState.print
 print "Game over!"
-if curState.winner == 2 then
+if curState.winner == 1 then
 	print "I win!"
-else if curState.winner == 1 then
+else if curState.winner == 0 then
 	print "You win."
 else
 	print "It's a draw."
